@@ -2,6 +2,8 @@ package com.example.francisco.w4d3;
 
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,11 +17,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.francisco.w4d3.model.Dishes;
+import com.example.francisco.w4d3.util.DummyData;
 
 import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
 public class MainActivity extends Activity {
@@ -118,28 +122,66 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    public void onClickAddDish(View view) {
+    @OnClick({R.id.btnAddDish, R.id.btnFillData})
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.btnAddDish:
+                InsertData(
+                        etName.getText().toString(),
+                        etRegion.getText().toString(),
+                        etType.getText().toString(),
+                        etURL.getText().toString(),
+                        edtDishDesc.getText().toString()
+                );
+                cleanValues();
+                break;
+            case R.id.btnFillData:
+                SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+                boolean inserted = sharedPref.getBoolean("inserted_dummy", false);
+
+                if(!inserted) {
+                    ArrayList<Dishes> dummy_data = DummyData.getDummyData();
+                    for (int i = 0; i < dummy_data.size(); i++) {
+
+                        InsertData(
+                                dummy_data.get(i).getName(),
+                                dummy_data.get(i).getRegion(),
+                                dummy_data.get(i).getType(),
+                                dummy_data.get(i).getUrl(),
+                                dummy_data.get(i).getDescription()
+                        );
+                    }
+
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putBoolean("inserted_dummy", true);
+                    editor.commit();
+                }
+                else{
+                    Toast.makeText(this, "You inserted the data previously, you cannot do this twice :(", Toast.LENGTH_LONG).show();
+                }
+
+        }
+    }
+
+    public void InsertData(String DISH_NAME, String DISH_REGION, String DISH_TYPE, String DISH_URL, String DISH_DESC){
         ContentValues contentValues = new ContentValues();
-        contentValues.put("DISH_NAME", etName.getText().toString());
-        contentValues.put("DISH_REGION", etRegion.getText().toString());
-        contentValues.put("DISH_TYPE", etType.getText().toString());
-        contentValues.put("DISH_URL" , etURL.getText().toString());
-        contentValues.put("DISH_DESC", edtDishDesc.getText().toString());
+        contentValues.put("DISH_NAME", DISH_NAME);
+        contentValues.put("DISH_REGION", DISH_REGION);
+        contentValues.put("DISH_TYPE", DISH_TYPE);
+        contentValues.put("DISH_URL", DISH_URL);
+        contentValues.put("DISH_DESC", DISH_DESC);
         Uri uri = getContentResolver().insert(CONTENT_URI, contentValues);
         Toast.makeText(getBaseContext(), uri.toString(), Toast.LENGTH_LONG).show();
 
 
         dishesList.add(new Dishes(
-                etName.getText().toString(),
-                etRegion.getText().toString(),
-                etType.getText().toString(),
-                etURL.getText().toString(),
-                edtDishDesc.getText().toString()
-                ));
-        dishesListAdapter.notifyItemInserted(dishesList.size()-1);
-
-
-        cleanValues();
+                DISH_NAME,
+                DISH_REGION,
+                DISH_TYPE,
+                DISH_URL,
+                DISH_DESC
+        ));
+        dishesListAdapter.notifyItemInserted(dishesList.size() - 1);
     }
 
     protected void cleanValues(){
